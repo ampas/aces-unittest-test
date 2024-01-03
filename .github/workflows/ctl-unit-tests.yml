@@ -1,0 +1,33 @@
+name: CTL Unit Tests
+
+on: [pull_request, push]
+
+jobs:
+  ctl-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependancies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ctl imagemagick
+        
+    - name: Generate a TIFF Image
+      run: |
+        convert -size 20x20 gradient: -format tiff input.tif
+
+    - name: Run CTL Render and Capture Output
+      id: ctl_render
+      run: |
+        output=$(ctlrender -ctl tests.ctl input.tif output.tif 2>&1)
+        echo "::set-output name=ctl_output::$output"
+        echo "$output"
+
+    - name: Check for 'FAILED'
+      run: |
+        if echo "${{ steps.ctl_render.outputs.ctl_output }}" | grep -q "FAILED"; then
+          echo "Failed tests detected"
+          exit 1
+        fi
