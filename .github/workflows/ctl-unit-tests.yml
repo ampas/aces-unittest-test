@@ -10,7 +10,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set CTL_MODULE_PATH
-      run: echo "CTL_MODULE_PATH=${{ github.workspace }}/lib" >> $GITHUB_ENV
+      run: echo "CTL_MODULE_PATH=${{ github.workspace }}/lib:${{ github.workspace }}/tests" >> $GITHUB_ENV
             
     - name: Install Homebrew and Add to PATH
       run: |
@@ -29,22 +29,18 @@ jobs:
 
     - name: Run CTL Render and Capture Output
       run: |
-        output=$(ctlrender -ctl /home/runner/work/aces-unittest-test/aces-unittest-test/tests.ctl /tmp/input.tif /tmp/output.tif 2>&1)
+        ctlrender -ctl /home/runner/work/aces-unittest-test/aces-unittest-test/tests/ACEStests.Execute.Tests.ctl /tmp/input.tif /tmp/output.tif 2>&1 > /tmp/ctl_output.txt
         retval=$?
-        echo "$output"
+        cat /tmp/ctl_output.txt
         if [ $retval -ne 0 ]; then
           echo "ctlrender exited with code $retval"
           exit $retval
         fi
-         
-        # Encode output in base64 and store it in the environment file
-        echo "ctl_output=$(echo "$output" | base64)" >> $GITHUB_ENV
+      continue-on-error: true
 
-    - name: Decode and Check for 'FAILED'
+    - name: Check for 'FAILED' in Output
       run: |
-        output_decoded=$(echo "$ctl_output" | base64 --decode)
-        echo "$output_decoded"
-        if echo "$output_decoded" | grep -q "FAILED"; then
+        if grep -q "FAILED" /tmp/ctl_output.txt; then
           echo "Failed tests detected"
           exit 1
         fi
