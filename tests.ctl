@@ -1,5 +1,14 @@
 import "ACESlib.Utilities";
 
+void compare_vals(float a, float b) {
+
+    if(a == b) {  
+         print("PASSED\n");
+    } else {
+         print("FAILED\n");
+    }
+
+}
 
 void test_min () {
 
@@ -8,14 +17,8 @@ void test_min () {
 
     float result = min(a, b);
     float expected = a;
-
-    if(result == expected) {  
-         print("PASSED\n");
-    } else {
-         print("FAILED\n");
-    }
     
-   
+    compare_vals(expected, result);
 
 }
 
@@ -25,24 +28,15 @@ void test_max () {
     float b = 0.7;
 
     float result = max(a, b);
-    float expected = b;
-
-    if(result == expected) {
-         print("PASSED\n");
-    } else {
-         print("FAILED\n");
-    }
+    float expected = a;
+    
+    compare_vals(expected, result);
 
 }
 
 void main 
-( 
-  input varying float rIn,
-  input varying float gIn,
-  input varying float bIn,
-  output varying float rOut,
-  output varying float gOut,
-  output varying float bOut)
+( input varying float rIn,
+  output varying float rOut)
 { 
 
     test_min();

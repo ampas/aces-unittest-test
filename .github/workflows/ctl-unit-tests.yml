@@ -8,26 +8,43 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Install dependancies
+    
+    - name: Set CTL_MODULE_PATH
+      run: echo "CTL_MODULE_PATH=${{ github.workspace }}/lib" >> $GITHUB_ENV
+            
+    - name: Install Homebrew and Add to PATH
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ctl imagemagick
-        
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        echo "PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH" >> $GITHUB_ENV
+
+    - name: Install CTL via Homebrew
+      run: |
+        brew install ctl
+
     - name: Generate a TIFF Image
       run: |
-        convert -size 20x20 gradient: -format tiff input.tif
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+        convert -size 20x20 -depth 8 -colorspace RGB gradient:red-blue /tmp/input.tif
 
     - name: Run CTL Render and Capture Output
-      id: ctl_render
       run: |
-        output=$(ctlrender -ctl tests.ctl input.tif output.tif 2>&1)
-        echo "::set-output name=ctl_output::$output"
+        output=$(ctlrender -ctl /home/runner/work/aces-unittest-test/aces-unittest-test/tests.ctl /tmp/input.tif /tmp/output.tif 2>&1)
+        retval=$?
         echo "$output"
+        if [ $retval -ne 0 ]; then
+          echo "ctlrender exited with code $retval"
+          exit $retval
+        fi
+         
+        # Encode output in base64 and store it in the environment file
+        echo "ctl_output=$(echo "$output" | base64)" >> $GITHUB_ENV
 
-    - name: Check for 'FAILED'
+    - name: Decode and Check for 'FAILED'
       run: |
-        if echo "${{ steps.ctl_render.outputs.ctl_output }}" | grep -q "FAILED"; then
+        output_decoded=$(echo "$ctl_output" | base64 --decode)
+        echo "$output_decoded"
+        if echo "$output_decoded" | grep -q "FAILED"; then
           echo "Failed tests detected"
           exit 1
         fi
