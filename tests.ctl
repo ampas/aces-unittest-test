@@ -28,7 +28,7 @@ void test_max () {
     float b = 0.7;
 
     float result = max(a, b);
-    float expected = a;
+    float expected = b;
     
     compare_vals(expected, result);
 
